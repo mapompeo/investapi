@@ -12,7 +12,7 @@
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public Users User { get; set; } = null!;
-        public ICollection<Transactions> Transactions { get; set; } = new List<Transaction>();
+        public ICollection<Transactions> Transactions { get; set; } = new List<Transactions>();
 
     }
     public enum AssetType
