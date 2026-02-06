@@ -7,6 +7,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/Dotnet.gitignore
 
+*.user
+*.csproj.user
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
@@ -52,3 +55,7 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+/.vs/investapi/CopilotIndices/18.0.988.22099/CodeChunks.db
+.vs/investapi.slnx/copilot-chat
+.vs/investapi/CopilotIndices
+.vs
