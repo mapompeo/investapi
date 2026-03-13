@@ -2,9 +2,9 @@
 
 <div align="center">
 
-![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=for-the-badge&logo=dotnet)
+![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet)
 ![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=csharp)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql)
+![SQLServer](https://img.shields.io/badge/SQL%20Server-CC2927?style=for-the-badge&logo=microsoftsqlserver)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=JSON%20web%20tokens)
 
 **API REST para gerenciamento inteligente de carteira de investimentos**
@@ -33,16 +33,17 @@ API completa para controle de investimentos em **ações brasileiras (B3)** e **
 
 ## 🛠️ Stack
 
-| Tecnologia | Uso |
-|------------|-----|
-| .NET 8 | Framework |
-| Entity Framework Core | ORM |
-| PostgreSQL | Banco de dados |
-| JWT Bearer | Autenticação |
-| FluentValidation | Validações |
-| Swagger/OpenAPI | Documentação |
+| Tecnologia            | Uso            |
+| --------------------- | -------------- |
+| .NET 10               | Framework      |
+| Entity Framework Core | ORM            |
+| SQL Server            | Banco de dados |
+| JWT Bearer            | Autenticação   |
+| FluentValidation      | Validações     |
+| Swagger/OpenAPI       | Documentação   |
 
 **APIs Externas:**
+
 - [Brapi](https://brapi.dev) - Ações B3
 - [CoinGecko](https://www.coingecko.com) - Criptomoedas
 
@@ -55,11 +56,11 @@ graph LR
     A[Cliente] --> B[Controllers]
     B --> C[Services]
     C --> D[Repositories]
-    D --> E[(PostgreSQL)]
+    D --> E[(SQL Server)]
     C --> F[QuoteService]
     F --> G[Brapi API]
     F --> H[CoinGecko API]
-    
+
     style A fill:#e1f5ff
     style B fill:#fff4e1
     style C fill:#ffe1f5
@@ -68,6 +69,7 @@ graph LR
 ```
 
 **Camadas:**
+
 - **Controllers** → Validação JWT e roteamento
 - **Services** → Regras de negócio
 - **Repositories** → Acesso a dados (EF Core)
@@ -81,14 +83,14 @@ graph LR
 erDiagram
     USER ||--o{ ASSET : possui
     ASSET ||--o{ TRANSACTION : tem
-    
+
     USER {
         guid Id PK
         string Name
         string Email UK
         string PasswordHash
     }
-    
+
     ASSET {
         guid Id PK
         guid UserId FK
@@ -97,7 +99,7 @@ erDiagram
         decimal Quantity
         decimal AvgBuyPrice
     }
-    
+
     TRANSACTION {
         guid Id PK
         guid AssetId FK
@@ -114,8 +116,8 @@ erDiagram
 
 ### Pré-requisitos
 
-- .NET 8 SDK
-- PostgreSQL 15+
+- .NET 10 SDK
+- SQL Server (ou SQL Server LocalDB)
 - Conta Railway (para deploy)
 
 ### Instalação Local
@@ -126,7 +128,7 @@ git clone https://github.com/seu-usuario/InvestAPI.git
 cd InvestAPI
 
 # Configure a connection string
-# Edite appsettings.json com suas credenciais PostgreSQL
+# Edite appsettings.json com suas credenciais SQL Server
 
 # Rode as migrations
 dotnet ef database update
@@ -140,11 +142,21 @@ A API estará disponível em `https://localhost:7000` com Swagger em `/swagger`
 ### Variáveis de Ambiente
 
 ```bash
-ConnectionStrings__DefaultConnection="Host=localhost;Database=investapi;Username=postgres;Password=sua-senha"
+ConnectionStrings__DefaultConnection="Server=(localdb)\\mssqllocaldb;Database=InvestAPIDb;Trusted_Connection=true;TrustServerCertificate=true;"
 JwtSettings__SecretKey="sua-chave-secreta-com-32-caracteres-minimo"
 JwtSettings__Issuer="InvestAPI"
 JwtSettings__Audience="InvestAPI-Users"
 JwtSettings__ExpirationInDays="7"
+```
+
+### Status atual de migrations
+
+- Migration inicial criada: `InitialCreate`
+- Provider atual das migrations: SQL Server
+- Comando para aplicar no banco local:
+
+```bash
+dotnet ef database update
 ```
 
 ---
@@ -153,34 +165,34 @@ JwtSettings__ExpirationInDays="7"
 
 ### Autenticação
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| POST | `/api/auth/register` | Registra novo usuário |
-| POST | `/api/auth/login` | Autentica e retorna JWT |
+| Método | Rota                 | Descrição               |
+| ------ | -------------------- | ----------------------- |
+| POST   | `/api/auth/register` | Registra novo usuário   |
+| POST   | `/api/auth/login`    | Autentica e retorna JWT |
 
 ### Assets 🔒
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| POST | `/api/assets` | Adiciona ativo |
-| GET | `/api/assets` | Lista ativos |
-| GET | `/api/assets/{id}` | Detalhes + histórico |
-| DELETE | `/api/assets/{id}` | Remove ativo |
+| Método | Rota               | Descrição            |
+| ------ | ------------------ | -------------------- |
+| POST   | `/api/assets`      | Adiciona ativo       |
+| GET    | `/api/assets`      | Lista ativos         |
+| GET    | `/api/assets/{id}` | Detalhes + histórico |
+| DELETE | `/api/assets/{id}` | Remove ativo         |
 
 ### Transactions 🔒
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| POST | `/api/transactions` | Registra compra/venda |
-| GET | `/api/transactions` | Lista transações |
+| Método | Rota                | Descrição             |
+| ------ | ------------------- | --------------------- |
+| POST   | `/api/transactions` | Registra compra/venda |
+| GET    | `/api/transactions` | Lista transações      |
 
 ### Portfolio 🔒
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| GET | `/api/portfolio/summary` | Resumo da carteira |
-| GET | `/api/portfolio/performance` | Performance por ativo |
-| GET | `/api/dashboard` | Dashboard completo |
+| Método | Rota                         | Descrição             |
+| ------ | ---------------------------- | --------------------- |
+| GET    | `/api/portfolio/summary`     | Resumo da carteira    |
+| GET    | `/api/portfolio/performance` | Performance por ativo |
+| GET    | `/api/dashboard`             | Dashboard completo    |
 
 🔒 = Requer autenticação (Bearer token)
 
@@ -215,6 +227,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -239,14 +252,15 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "ticker": "PETR4",
-  "currentPrice": 40.20,
-  "totalInvested": 3850.00,
-  "currentValue": 4020.00,
-  "profitLoss": 170.00,
+  "currentPrice": 40.2,
+  "totalInvested": 3850.0,
+  "currentValue": 4020.0,
+  "profitLoss": 170.0,
   "profitLossPercentage": 4.42
 }
 ```
@@ -261,7 +275,7 @@ sequenceDiagram
     participant API as InvestAPI
     participant DB as Database
     participant Ext as Brapi/CoinGecko
-    
+
     U->>API: POST /api/assets {ticker, quantity, price}
     API->>API: Validar JWT
     API->>Ext: Buscar cotação atual
@@ -284,6 +298,7 @@ Novo Avg = (Qty Atual × Avg Atual) + (Qty Nova × Preço Novo)
 ```
 
 **Exemplo:**
+
 - Tinha: 50 ações @ R$ 37,00 = R$ 1.850
 - Comprou: 50 ações @ R$ 40,00 = R$ 2.000
 - **Novo avg:** R$ 38,50
