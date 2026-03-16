@@ -8,6 +8,7 @@ namespace InvestAPI.Services.Quotes
     {
         Task<IReadOnlyDictionary<string, decimal>> GetPricesAsync(
             IEnumerable<AssetQuoteRequest> assets,
+            bool forceRefresh = false,
             CancellationToken cancellationToken = default);
     }
 }

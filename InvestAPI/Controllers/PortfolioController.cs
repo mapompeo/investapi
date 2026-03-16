@@ -71,7 +71,7 @@ namespace InvestAPI.Controllers
                 .Select(a => new AssetQuoteRequest(a.Ticker, a.Type))
                 .ToList();
 
-            var quotes = await _quoteService.GetPricesAsync(quoteRequests, cancellationToken);
+            var quotes = await _quoteService.GetPricesAsync(quoteRequests, cancellationToken: cancellationToken);
 
             var items = new List<PortfolioPerformanceItemDto>(assets.Count);
 

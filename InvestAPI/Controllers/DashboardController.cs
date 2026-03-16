@@ -57,7 +57,7 @@ namespace InvestAPI.Controllers
                 .Select(a => new AssetQuoteRequest(a.Ticker, a.Type))
                 .ToList();
 
-            var quotes = await _quoteService.GetPricesAsync(quoteRequests, HttpContext.RequestAborted);
+            var quotes = await _quoteService.GetPricesAsync(quoteRequests, cancellationToken: HttpContext.RequestAborted);
 
             var rows = assets.Select(asset =>
             {

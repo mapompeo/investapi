@@ -29,6 +29,7 @@ namespace InvestAPI.Services.Quotes
 
         public async Task<IReadOnlyDictionary<string, decimal>> GetPricesAsync(
             IEnumerable<AssetQuoteRequest> assets,
+            bool forceRefresh = false,
             CancellationToken cancellationToken = default)
         {
             var requestedAssets = assets
@@ -51,7 +52,7 @@ namespace InvestAPI.Services.Quotes
 
             var result = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var existing in existingQuotes.Where(q => q.LastUpdate >= cacheWindowStart && q.CurrentPrice > 0))
+            foreach (var existing in existingQuotes.Where(q => !forceRefresh && q.LastUpdate >= cacheWindowStart && q.CurrentPrice > 0))
                 result[existing.Ticker] = existing.CurrentPrice;
 
             var missing = requestedAssets.Where(a => !result.ContainsKey(a.Ticker)).ToList();
@@ -68,10 +69,24 @@ namespace InvestAPI.Services.Quotes
                 {
                     if (asset.Type == AssetType.Crypto)
                     {
-                        fetchedPrice = await _coinGeckoClient.GetPriceBySymbolAsync(
-                            asset.Ticker,
-                            _settings.CoinGeckoVsCurrency,
-                            cancellationToken);
+                        var coinId = ResolveCoinGeckoId(asset.Ticker);
+
+                        if (!string.IsNullOrWhiteSpace(coinId))
+                        {
+                            fetchedPrice = await _coinGeckoClient.GetPriceByIdAsync(
+                                coinId,
+                                _settings.CoinGeckoVsCurrency,
+                                cancellationToken);
+                        }
+
+                        if (fetchedPrice is null)
+                        {
+                            fetchedPrice = await _coinGeckoClient.GetPriceBySymbolAsync(
+                                asset.Ticker,
+                                _settings.CoinGeckoVsCurrency,
+                                cancellationToken);
+                        }
+
                         source = "CoinGecko";
                         currency = _settings.CoinGeckoVsCurrency.ToUpperInvariant();
                     }
@@ -113,6 +128,14 @@ namespace InvestAPI.Services.Quotes
 
             await _context.SaveChangesAsync(cancellationToken);
             return result;
+        }
+
+        private string? ResolveCoinGeckoId(string ticker)
+        {
+            if (_settings.CoinGeckoTickerToId.TryGetValue(ticker, out var mappedId) && !string.IsNullOrWhiteSpace(mappedId))
+                return mappedId;
+
+            return ticker.Trim().ToLowerInvariant();
         }
     }
 }

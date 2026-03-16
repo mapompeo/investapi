@@ -82,9 +82,13 @@ Ultima atualizacao: 2026-03-16
 - Servico de cotacoes implementado em Services/Quotes com:
   - IQuoteService + DbCachedQuoteService
   - Cliente Brapi para ativos de renda variavel (Stock/FII)
-  - Cliente CoinGecko para cripto por simbolo
+  - Cliente CoinGecko para cripto por id com fallback por simbolo
 - Cache persistido em AssetQuotes com expiracao configuravel (padrao 5 minutos via QuoteSettings.CacheMinutes).
 - Portfolio e Dashboard passaram a consultar o QuoteService em vez de ler cotacao diretamente da tabela.
+- Mapeamento configuravel de ticker para coin id via QuoteSettings.CoinGeckoTickerToId.
+- Endpoint manual de refresh de cotacoes implementado em Controllers/QuotesController.cs:
+  - POST /api/quotes/refresh
+  - POST /api/quotes/refresh/{ticker}
 
 ### Validacoes
 
