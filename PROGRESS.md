@@ -60,6 +60,23 @@ Ultima atualizacao: 2026-03-16
   - Bloqueio de venda com quantidade insuficiente.
   - Atualizacao da quantidade do ativo apos compra/venda.
 
+### Portfolio
+
+- Controller de portfolio implementado em Controllers/PortfolioController.cs com:
+  - GET /api/portfolio/summary
+  - GET /api/portfolio/performance
+- Performance calculada por ativo com fallback para AvgBuyPrice quando nao ha cotacao cacheada em AssetQuotes.
+
+### Dashboard
+
+- Controller de dashboard implementado em Controllers/DashboardController.cs com:
+  - GET /api/dashboard
+- Indicadores agregados implementados:
+  - Total investido, valor atual, lucro/prejuizo e percentual.
+  - Melhor e pior ativo por performance.
+  - Alocacao percentual por ticker.
+  - Total de transacoes do usuario.
+
 ## Pendencias para alinhar com README
 
 ### Infra e configuracao
@@ -76,18 +93,14 @@ Ultima atualizacao: 2026-03-16
 
 ### Endpoints planejados no README ainda nao implementados
 
-- Portfolio:
-  - GET /api/portfolio/summary
-  - GET /api/portfolio/performance
-- Dashboard:
-  - GET /api/dashboard
+- Integracao de cotacoes em tempo real ainda nao aplicada nos endpoints de portfolio/dashboard.
 
 ### Regras de negocio ainda nao implementadas
 
 - Integracao com Brapi e CoinGecko.
 - Cache de cotacoes com expiracao de 5 minutos.
 - Validacoes com FluentValidation ainda nao integradas no pipeline.
-- Regras agregadas de portfolio/performance ainda nao implementadas.
+- Regras avancadas de consolidacao (por periodo, benchmark, historico de performance) ainda nao implementadas.
 
 ## Checklist de validacao do README
 
@@ -95,11 +108,11 @@ Ultima atualizacao: 2026-03-16
 - [x] Relacoes do modelo de dados sao coerentes com o objetivo da API.
 - [x] Stack principal no codigo esta alinhada com SQL Server + JWT + Swagger.
 - [ ] Arquitetura em camadas esta refletida no codigo (ainda nao).
-- [ ] Endpoints listados no README existem de fato (auth, users, assets e transactions basicos implementados; portfolio/dashboard pendentes).
+- [x] Endpoints principais do README existem de fato (auth, users, assets, transactions, portfolio e dashboard implementados).
 - [ ] Regras de negocio de portfolio/transacoes estao implementadas.
 
 ## Observacoes de coerencia
 
-- O que foi implementado ate agora (auth + usuario autenticado + assets/transacoes basicos + dominio inicial) e coerente com o objetivo do projeto.
+- O que foi implementado ate agora (auth + usuario autenticado + ativos + transacoes + portfolio + dashboard basicos) e coerente com o objetivo do projeto.
 - O README esta correto como visao de produto final, mas hoje funciona mais como roadmap do que documentacao do estado atual.
 - Recomenda-se manter este arquivo atualizado ao fim de cada bloco implementado para evitar desvio entre documentacao e codigo.
