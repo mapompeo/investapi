@@ -4,7 +4,6 @@ using InvestAPI.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using BCrypt.Net;
 
 namespace InvestAPI.Controllers
 {
@@ -68,34 +67,6 @@ namespace InvestAPI.Controllers
             return Ok(response);
         }
 
-        [HttpPost]
-        public async Task<ActionResult<UserResponseDto>> Create([FromBody] CreateUserDto dto)
-        {
-            if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
-                return Conflict(new { message = "Email já cadastrado." });
-
-            var user = new Users
-            {
-                Id = Guid.NewGuid(),
-                Name = dto.Name,
-                Email = dto.Email,
-                PasswordHash = HashPassword(dto.Password)
-            };
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            var response = new UserResponseDto
-            {
-                Id = user.Id,
-                Name = user.Name,
-                Email = user.Email,
-                CreatedAt = user.CreatedAt
-            };
-
-            return CreatedAtAction(nameof(GetById), new { id = user.Id }, response);
-        }
-
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(Guid id, [FromBody] UpdateUserDto dto)
         {
@@ -117,7 +88,7 @@ namespace InvestAPI.Controllers
             if (dto.Email != null)
                 user.Email = dto.Email;
             if (dto.Password != null)
-                user.PasswordHash = HashPassword(dto.Password);
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password, workFactor: 12);
 
             try
             {
@@ -153,11 +124,6 @@ namespace InvestAPI.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private string HashPassword(string password)
-        {
-            return BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
         }
 
         private Guid? GetCurrentUserId()

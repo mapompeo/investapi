@@ -1,10 +1,10 @@
 # InvestAPI - Progresso de Implementacao
 
-Ultima atualizacao: 2026-03-13
+Ultima atualizacao: 2026-03-16
 
 ## Status Geral
 
-- Projeto em fase inicial com base de dominio pronta e CRUD de usuarios implementado.
+- Projeto em fase inicial com base de dominio pronta, autenticacao JWT ativa e gestao de usuario autenticado implementada.
 - README descreve o estado alvo (roadmap) e ainda nao o estado atual.
 
 ## O que ja foi concluido
@@ -18,25 +18,31 @@ Ultima atualizacao: 2026-03-13
 ### Usuarios
 
 - DTOs de usuario criados:
-  - CreateUserDto
   - UpdateUserDto
   - UserResponseDto
 - Controller de usuarios implementado em Controllers/UsersController.cs com:
+  - GET /api/users/me
   - GET /api/users/{id}
-  - GET /api/users
-  - POST /api/users
   - PUT /api/users/{id}
   - DELETE /api/users/{id}
-- Senha hash com BCrypt no cadastro/atualizacao.
-- POST valida email duplicado (retorna 409 Conflict).
+- Atualizacao de senha com BCrypt no endpoint PUT.
+
+### Autenticacao
+
+- Controller de autenticacao implementado em Controllers/AuthController.cs com:
+  - POST /api/auth/register
+  - POST /api/auth/login
+- Emissao de JWT com claims de usuario (sub, email, name).
+- Program.cs configurado com AddAuthentication/AddJwtBearer e AddAuthorization.
 
 ## Pendencias para alinhar com README
 
 ### Infra e configuracao
 
-- README aponta PostgreSQL, mas o projeto esta configurado para SQL Server em Program.cs e appsettings.json.
-- README cita Swagger em /swagger, mas Program.cs usa AddOpenApi/MapOpenApi.
-- README aponta .NET 8, mas o projeto esta em net10.0 no csproj.
+- Provider definido para SQL Server no projeto (removido pacote PostgreSQL do csproj).
+- Swagger ativo em ambiente de desenvolvimento via AddSwaggerGen/UseSwagger/UseSwaggerUI.
+- Projeto em net10.0.
+- Secret JWT removido do valor real em appsettings.json para uso via ambiente.
 
 ### Arquitetura
 
@@ -45,9 +51,6 @@ Ultima atualizacao: 2026-03-13
 
 ### Endpoints planejados no README ainda nao implementados
 
-- Auth:
-  - POST /api/auth/register
-  - POST /api/auth/login
 - Assets:
   - POST /api/assets
   - GET /api/assets
@@ -68,20 +71,19 @@ Ultima atualizacao: 2026-03-13
 - Validacao de venda sem quantidade suficiente.
 - Integracao com Brapi e CoinGecko.
 - Cache de cotacoes com expiracao de 5 minutos.
-- JWT completo (issuer, audience, expiracao, secret em configuracao).
-  - Observacao: o pacote JwtBearer ja esta instalado, mas nao foi configurado no Program.cs.
+- Validacoes com FluentValidation ainda nao integradas no pipeline.
 
 ## Checklist de validacao do README
 
 - [x] Entidades principais (Users, Assets, Transactions, AssetQuote) fazem sentido para o dominio.
 - [x] Relacoes do modelo de dados sao coerentes com o objetivo da API.
-- [ ] Stack descrita no README esta alinhada com o codigo atual (ha divergencias em banco e auth).
+- [x] Stack principal no codigo esta alinhada com SQL Server + JWT + Swagger.
 - [ ] Arquitetura em camadas esta refletida no codigo (ainda nao).
-- [ ] Endpoints listados no README existem de fato (apenas users existe, e nem esta documentado no README).
+- [ ] Endpoints listados no README existem de fato (auth e users parciais; modulo de investimentos pendente).
 - [ ] Regras de negocio de portfolio/transacoes estao implementadas.
 
 ## Observacoes de coerencia
 
-- O que foi implementado ate agora (CRUD de usuarios + dominio inicial) e coerente com o objetivo do projeto.
+- O que foi implementado ate agora (auth + usuario autenticado + dominio inicial) e coerente com o objetivo do projeto.
 - O README esta correto como visao de produto final, mas hoje funciona mais como roadmap do que documentacao do estado atual.
 - Recomenda-se manter este arquivo atualizado ao fim de cada bloco implementado para evitar desvio entre documentacao e codigo.
