@@ -35,6 +35,31 @@ Ultima atualizacao: 2026-03-16
 - Emissao de JWT com claims de usuario (sub, email, name).
 - Program.cs configurado com AddAuthentication/AddJwtBearer e AddAuthorization.
 
+### Assets
+
+- DTOs de ativos criados:
+  - CreateAssetDto
+  - AssetResponseDto
+- Controller de ativos implementado em Controllers/AssetsController.cs com:
+  - POST /api/assets
+  - GET /api/assets
+  - GET /api/assets/{id}
+  - DELETE /api/assets/{id}
+- Endpoints de ativos restritos ao usuario autenticado por claim sub.
+
+### Transactions
+
+- DTOs de transacao criados:
+  - CreateTransactionDto
+  - TransactionResponseDto
+- Controller de transacoes implementado em Controllers/TransactionsController.cs com:
+  - POST /api/transactions
+  - GET /api/transactions
+- Regras de negocio ja implementadas em transacoes:
+  - Calculo de preco medio em compra.
+  - Bloqueio de venda com quantidade insuficiente.
+  - Atualizacao da quantidade do ativo apos compra/venda.
+
 ## Pendencias para alinhar com README
 
 ### Infra e configuracao
@@ -51,14 +76,6 @@ Ultima atualizacao: 2026-03-16
 
 ### Endpoints planejados no README ainda nao implementados
 
-- Assets:
-  - POST /api/assets
-  - GET /api/assets
-  - GET /api/assets/{id}
-  - DELETE /api/assets/{id}
-- Transactions:
-  - POST /api/transactions
-  - GET /api/transactions
 - Portfolio:
   - GET /api/portfolio/summary
   - GET /api/portfolio/performance
@@ -67,11 +84,10 @@ Ultima atualizacao: 2026-03-16
 
 ### Regras de negocio ainda nao implementadas
 
-- Calculo automatico de preco medio por compra.
-- Validacao de venda sem quantidade suficiente.
 - Integracao com Brapi e CoinGecko.
 - Cache de cotacoes com expiracao de 5 minutos.
 - Validacoes com FluentValidation ainda nao integradas no pipeline.
+- Regras agregadas de portfolio/performance ainda nao implementadas.
 
 ## Checklist de validacao do README
 
@@ -79,11 +95,11 @@ Ultima atualizacao: 2026-03-16
 - [x] Relacoes do modelo de dados sao coerentes com o objetivo da API.
 - [x] Stack principal no codigo esta alinhada com SQL Server + JWT + Swagger.
 - [ ] Arquitetura em camadas esta refletida no codigo (ainda nao).
-- [ ] Endpoints listados no README existem de fato (auth e users parciais; modulo de investimentos pendente).
+- [ ] Endpoints listados no README existem de fato (auth, users, assets e transactions basicos implementados; portfolio/dashboard pendentes).
 - [ ] Regras de negocio de portfolio/transacoes estao implementadas.
 
 ## Observacoes de coerencia
 
-- O que foi implementado ate agora (auth + usuario autenticado + dominio inicial) e coerente com o objetivo do projeto.
+- O que foi implementado ate agora (auth + usuario autenticado + assets/transacoes basicos + dominio inicial) e coerente com o objetivo do projeto.
 - O README esta correto como visao de produto final, mas hoje funciona mais como roadmap do que documentacao do estado atual.
 - Recomenda-se manter este arquivo atualizado ao fim de cada bloco implementado para evitar desvio entre documentacao e codigo.
