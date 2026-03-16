@@ -77,6 +77,23 @@ Ultima atualizacao: 2026-03-16
   - Alocacao percentual por ticker.
   - Total de transacoes do usuario.
 
+### Cotacoes e cache
+
+- Servico de cotacoes implementado em Services/Quotes com:
+  - IQuoteService + DbCachedQuoteService
+  - Cliente Brapi para ativos de renda variavel (Stock/FII)
+  - Cliente CoinGecko para cripto por simbolo
+- Cache persistido em AssetQuotes com expiracao configuravel (padrao 5 minutos via QuoteSettings.CacheMinutes).
+- Portfolio e Dashboard passaram a consultar o QuoteService em vez de ler cotacao diretamente da tabela.
+
+### Validacoes
+
+- FluentValidation integrado no pipeline em Program.cs.
+- Validators adicionados para DTOs de:
+  - Auth (RegisterDto, LoginDto)
+  - Assets (CreateAssetDto)
+  - Transactions (CreateTransactionDto)
+
 ## Pendencias para alinhar com README
 
 ### Infra e configuracao
@@ -93,13 +110,10 @@ Ultima atualizacao: 2026-03-16
 
 ### Endpoints planejados no README ainda nao implementados
 
-- Integracao de cotacoes em tempo real ainda nao aplicada nos endpoints de portfolio/dashboard.
+- Nenhum endpoint principal pendente; foco atual em robustez, validacoes e refinamentos.
 
 ### Regras de negocio ainda nao implementadas
 
-- Integracao com Brapi e CoinGecko.
-- Cache de cotacoes com expiracao de 5 minutos.
-- Validacoes com FluentValidation ainda nao integradas no pipeline.
 - Regras avancadas de consolidacao (por periodo, benchmark, historico de performance) ainda nao implementadas.
 
 ## Checklist de validacao do README
@@ -109,7 +123,7 @@ Ultima atualizacao: 2026-03-16
 - [x] Stack principal no codigo esta alinhada com SQL Server + JWT + Swagger.
 - [ ] Arquitetura em camadas esta refletida no codigo (ainda nao).
 - [x] Endpoints principais do README existem de fato (auth, users, assets, transactions, portfolio e dashboard implementados).
-- [ ] Regras de negocio de portfolio/transacoes estao implementadas.
+- [x] Regras de negocio base de transacoes e portfolio estao implementadas.
 
 ## Observacoes de coerencia
 

@@ -1,5 +1,6 @@
 using InvestAPI.Data;
 using InvestAPI.DTOs.Dashboard;
+using InvestAPI.Services.Quotes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +13,12 @@ namespace InvestAPI.Controllers
     public class DashboardController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IQuoteService _quoteService;
 
-        public DashboardController(AppDbContext context)
+        public DashboardController(AppDbContext context, IQuoteService quoteService)
         {
             _context = context;
+            _quoteService = quoteService;
         }
 
         [HttpGet]
@@ -28,12 +31,12 @@ namespace InvestAPI.Controllers
             var assets = await _context.Assets
                 .AsNoTracking()
                 .Where(a => a.UserId == userId.Value)
-                .ToListAsync();
+                .ToListAsync(HttpContext.RequestAborted);
 
             var assetIds = assets.Select(a => a.Id).ToList();
             var totalTransactions = assetIds.Count == 0
                 ? 0
-                : await _context.Transactions.AsNoTracking().CountAsync(t => assetIds.Contains(t.AssetId));
+                : await _context.Transactions.AsNoTracking().CountAsync(t => assetIds.Contains(t.AssetId), HttpContext.RequestAborted);
 
             if (assets.Count == 0)
             {
@@ -50,11 +53,11 @@ namespace InvestAPI.Controllers
                 });
             }
 
-            var tickers = assets.Select(a => a.Ticker).Distinct().ToList();
-            var quotes = await _context.AssetQuotes
-                .AsNoTracking()
-                .Where(q => tickers.Contains(q.Ticker))
-                .ToDictionaryAsync(q => q.Ticker, q => q.CurrentPrice);
+            var quoteRequests = assets
+                .Select(a => new AssetQuoteRequest(a.Ticker, a.Type))
+                .ToList();
+
+            var quotes = await _quoteService.GetPricesAsync(quoteRequests, HttpContext.RequestAborted);
 
             var rows = assets.Select(asset =>
             {

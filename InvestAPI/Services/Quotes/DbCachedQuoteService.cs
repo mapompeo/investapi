@@ -1,0 +1,118 @@
+using InvestAPI.Data;
+using InvestAPI.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+
+namespace InvestAPI.Services.Quotes
+{
+    public class DbCachedQuoteService : IQuoteService
+    {
+        private readonly AppDbContext _context;
+        private readonly IBrapiClient _brapiClient;
+        private readonly ICoinGeckoClient _coinGeckoClient;
+        private readonly QuoteSettings _settings;
+        private readonly ILogger<DbCachedQuoteService> _logger;
+
+        public DbCachedQuoteService(
+            AppDbContext context,
+            IBrapiClient brapiClient,
+            ICoinGeckoClient coinGeckoClient,
+            IOptions<QuoteSettings> options,
+            ILogger<DbCachedQuoteService> logger)
+        {
+            _context = context;
+            _brapiClient = brapiClient;
+            _coinGeckoClient = coinGeckoClient;
+            _settings = options.Value;
+            _logger = logger;
+        }
+
+        public async Task<IReadOnlyDictionary<string, decimal>> GetPricesAsync(
+            IEnumerable<AssetQuoteRequest> assets,
+            CancellationToken cancellationToken = default)
+        {
+            var requestedAssets = assets
+                .Where(a => !string.IsNullOrWhiteSpace(a.Ticker))
+                .Select(a => new AssetQuoteRequest(a.Ticker.Trim().ToUpperInvariant(), a.Type))
+                .GroupBy(a => a.Ticker)
+                .Select(g => g.First())
+                .ToList();
+
+            if (requestedAssets.Count == 0)
+                return new Dictionary<string, decimal>();
+
+            var tickers = requestedAssets.Select(a => a.Ticker).ToList();
+            var now = DateTime.UtcNow;
+            var cacheWindowStart = now.AddMinutes(-Math.Max(1, _settings.CacheMinutes));
+
+            var existingQuotes = await _context.AssetQuotes
+                .Where(q => tickers.Contains(q.Ticker))
+                .ToListAsync(cancellationToken);
+
+            var result = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var existing in existingQuotes.Where(q => q.LastUpdate >= cacheWindowStart && q.CurrentPrice > 0))
+                result[existing.Ticker] = existing.CurrentPrice;
+
+            var missing = requestedAssets.Where(a => !result.ContainsKey(a.Ticker)).ToList();
+            if (missing.Count == 0)
+                return result;
+
+            foreach (var asset in missing)
+            {
+                decimal? fetchedPrice = null;
+                var source = string.Empty;
+                var currency = "BRL";
+
+                try
+                {
+                    if (asset.Type == AssetType.Crypto)
+                    {
+                        fetchedPrice = await _coinGeckoClient.GetPriceBySymbolAsync(
+                            asset.Ticker,
+                            _settings.CoinGeckoVsCurrency,
+                            cancellationToken);
+                        source = "CoinGecko";
+                        currency = _settings.CoinGeckoVsCurrency.ToUpperInvariant();
+                    }
+                    else
+                    {
+                        fetchedPrice = await _brapiClient.GetPriceAsync(asset.Ticker, cancellationToken);
+                        source = "Brapi";
+                        currency = "BRL";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Erro ao buscar cotacao para ticker {Ticker}", asset.Ticker);
+                }
+
+                if (fetchedPrice is null || fetchedPrice <= 0)
+                    continue;
+
+                result[asset.Ticker] = fetchedPrice.Value;
+
+                var quoteEntity = existingQuotes.FirstOrDefault(q => q.Ticker == asset.Ticker);
+                if (quoteEntity == null)
+                {
+                    quoteEntity = new AssetQuote
+                    {
+                        Id = Guid.NewGuid(),
+                        Ticker = asset.Ticker
+                    };
+
+                    _context.AssetQuotes.Add(quoteEntity);
+                    existingQuotes.Add(quoteEntity);
+                }
+
+                quoteEntity.CurrentPrice = fetchedPrice.Value;
+                quoteEntity.Source = source;
+                quoteEntity.Currency = currency;
+                quoteEntity.LastUpdate = now;
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+            return result;
+        }
+    }
+}

@@ -1,5 +1,6 @@
 using InvestAPI.Data;
 using InvestAPI.DTOs.Portfolio;
+using InvestAPI.Services.Quotes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +13,12 @@ namespace InvestAPI.Controllers
     public class PortfolioController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IQuoteService _quoteService;
 
-        public PortfolioController(AppDbContext context)
+        public PortfolioController(AppDbContext context, IQuoteService quoteService)
         {
             _context = context;
+            _quoteService = quoteService;
         }
 
         [HttpGet("summary")]
@@ -25,7 +28,7 @@ namespace InvestAPI.Controllers
             if (userId == null)
                 return Unauthorized();
 
-            var items = await BuildPerformanceItems(userId.Value);
+            var items = await BuildPerformanceItems(userId.Value, HttpContext.RequestAborted);
 
             var totalInvested = items.Sum(i => i.TotalInvested);
             var currentValue = items.Sum(i => i.CurrentValue);
@@ -50,25 +53,25 @@ namespace InvestAPI.Controllers
             if (userId == null)
                 return Unauthorized();
 
-            var items = await BuildPerformanceItems(userId.Value);
+            var items = await BuildPerformanceItems(userId.Value, HttpContext.RequestAborted);
             return Ok(items.OrderByDescending(i => i.CurrentValue));
         }
 
-        private async Task<List<PortfolioPerformanceItemDto>> BuildPerformanceItems(Guid userId)
+        private async Task<List<PortfolioPerformanceItemDto>> BuildPerformanceItems(Guid userId, CancellationToken cancellationToken)
         {
             var assets = await _context.Assets
                 .AsNoTracking()
                 .Where(a => a.UserId == userId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             if (assets.Count == 0)
                 return new List<PortfolioPerformanceItemDto>();
 
-            var tickers = assets.Select(a => a.Ticker).Distinct().ToList();
-            var quotes = await _context.AssetQuotes
-                .AsNoTracking()
-                .Where(q => tickers.Contains(q.Ticker))
-                .ToDictionaryAsync(q => q.Ticker, q => q.CurrentPrice);
+            var quoteRequests = assets
+                .Select(a => new AssetQuoteRequest(a.Ticker, a.Type))
+                .ToList();
+
+            var quotes = await _quoteService.GetPricesAsync(quoteRequests, cancellationToken);
 
             var items = new List<PortfolioPerformanceItemDto>(assets.Count);
 
