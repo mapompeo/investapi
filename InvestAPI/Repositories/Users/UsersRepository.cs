@@ -25,18 +25,18 @@ public class UsersRepository : IUsersRepository
 
     public Task<InvestAPI.Models.Users?> GetByNormalizedEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
     {
-        return _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail, cancellationToken);
+        return _context.Users.FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
     }
 
     public Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken cancellationToken = default)
     {
-        return _context.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail, cancellationToken);
+        return _context.Users.AnyAsync(u => u.Email == normalizedEmail, cancellationToken);
     }
 
     public Task<bool> EmailExistsForOtherUserAsync(string normalizedEmail, Guid excludedUserId, CancellationToken cancellationToken = default)
     {
         return _context.Users.AnyAsync(
-            u => u.Email.ToLower() == normalizedEmail && u.Id != excludedUserId,
+            u => u.Email == normalizedEmail && u.Id != excludedUserId,
             cancellationToken);
     }
 

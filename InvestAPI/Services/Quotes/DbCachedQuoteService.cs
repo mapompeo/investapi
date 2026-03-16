@@ -1,26 +1,29 @@
-using InvestAPI.Data;
 using InvestAPI.Models;
-using Microsoft.EntityFrameworkCore;
+using InvestAPI.Repositories.Common;
+using InvestAPI.Repositories.Quotes;
 using Microsoft.Extensions.Options;
 
 namespace InvestAPI.Services.Quotes
 {
     public class DbCachedQuoteService : IQuoteService
     {
-        private readonly AppDbContext _context;
+        private readonly IAssetQuotesRepository _assetQuotesRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IBrapiClient _brapiClient;
         private readonly ICoinGeckoClient _coinGeckoClient;
         private readonly QuoteSettings _settings;
         private readonly ILogger<DbCachedQuoteService> _logger;
 
         public DbCachedQuoteService(
-            AppDbContext context,
+            IAssetQuotesRepository assetQuotesRepository,
+            IUnitOfWork unitOfWork,
             IBrapiClient brapiClient,
             ICoinGeckoClient coinGeckoClient,
             IOptions<QuoteSettings> options,
             ILogger<DbCachedQuoteService> logger)
         {
-            _context = context;
+            _assetQuotesRepository = assetQuotesRepository;
+            _unitOfWork = unitOfWork;
             _brapiClient = brapiClient;
             _coinGeckoClient = coinGeckoClient;
             _settings = options.Value;
@@ -46,9 +49,7 @@ namespace InvestAPI.Services.Quotes
             var now = DateTime.UtcNow;
             var cacheWindowStart = now.AddMinutes(-Math.Max(1, _settings.CacheMinutes));
 
-            var existingQuotes = await _context.AssetQuotes
-                .Where(q => tickers.Contains(q.Ticker))
-                .ToListAsync(cancellationToken);
+            var existingQuotes = await _assetQuotesRepository.GetByTickersAsync(tickers, cancellationToken);
 
             var result = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
 
@@ -116,7 +117,7 @@ namespace InvestAPI.Services.Quotes
                         Ticker = asset.Ticker
                     };
 
-                    _context.AssetQuotes.Add(quoteEntity);
+                    _assetQuotesRepository.Add(quoteEntity);
                     existingQuotes.Add(quoteEntity);
                 }
 
@@ -126,7 +127,7 @@ namespace InvestAPI.Services.Quotes
                 quoteEntity.LastUpdate = now;
             }
 
-            await _context.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return result;
         }
 

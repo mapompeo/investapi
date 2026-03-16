@@ -30,7 +30,7 @@ namespace InvestAPI.Controllers
         {
             var userId = GetCurrentUserIdOrThrow();
             var items = await _portfolioService.GetPerformanceAsync(userId, HttpContext.RequestAborted);
-            return Ok(items.OrderByDescending(i => i.CurrentValue));
+            return Ok(items);
         }
     }
 }

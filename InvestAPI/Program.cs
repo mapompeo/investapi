@@ -5,6 +5,7 @@ using InvestAPI.Data;
 using InvestAPI.Middleware;
 using InvestAPI.Repositories.Assets;
 using InvestAPI.Repositories.Common;
+using InvestAPI.Repositories.Quotes;
 using InvestAPI.Repositories.Transactions;
 using InvestAPI.Repositories.Users;
 using InvestAPI.Services.Assets;
@@ -17,6 +18,7 @@ using InvestAPI.Services.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +27,33 @@ builder.Services.AddControllers();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Informe o token JWT no formato: Bearer {token}"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 // Registrar o DbContext com SQL Server
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -46,6 +74,7 @@ builder.Services.AddScoped<IQuoteService, DbCachedQuoteService>();
 builder.Services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 builder.Services.AddScoped<IUsersRepository, UsersRepository>();
 builder.Services.AddScoped<IAssetsRepository, AssetsRepository>();
+builder.Services.AddScoped<IAssetQuotesRepository, AssetQuotesRepository>();
 builder.Services.AddScoped<ITransactionsRepository, TransactionsRepository>();
 builder.Services.AddScoped<IQuotesManagementService, QuotesManagementService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -58,6 +87,11 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"]
     ?? throw new InvalidOperationException("JwtSettings:SecretKey não configurado.");
+
+if (Encoding.UTF8.GetByteCount(secretKey) < 32)
+{
+    throw new InvalidOperationException("JwtSettings:SecretKey deve ter no mínimo 32 bytes para HS256.");
+}
 
 builder.Services
     .AddAuthentication(options =>
@@ -95,10 +129,7 @@ if (app.Environment.IsDevelopment())
     app.MapGet("/", () => Results.Redirect("/swagger"));
 }
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
+app.UseHttpsRedirection();
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
