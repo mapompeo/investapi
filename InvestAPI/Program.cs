@@ -2,7 +2,18 @@ using System.Text;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using InvestAPI.Data;
+using InvestAPI.Middleware;
+using InvestAPI.Repositories.Assets;
+using InvestAPI.Repositories.Common;
+using InvestAPI.Repositories.Transactions;
+using InvestAPI.Repositories.Users;
+using InvestAPI.Services.Assets;
+using InvestAPI.Services.Auth;
+using InvestAPI.Services.Dashboard;
+using InvestAPI.Services.Portfolio;
 using InvestAPI.Services.Quotes;
+using InvestAPI.Services.Transactions;
+using InvestAPI.Services.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -32,6 +43,17 @@ builder.Services.AddHttpClient<ICoinGeckoClient, CoinGeckoClient>((sp, client) =
     client.BaseAddress = new Uri(settings.CoinGeckoBaseUrl);
 });
 builder.Services.AddScoped<IQuoteService, DbCachedQuoteService>();
+builder.Services.AddScoped<IUnitOfWork, EfUnitOfWork>();
+builder.Services.AddScoped<IUsersRepository, UsersRepository>();
+builder.Services.AddScoped<IAssetsRepository, AssetsRepository>();
+builder.Services.AddScoped<ITransactionsRepository, TransactionsRepository>();
+builder.Services.AddScoped<IQuotesManagementService, QuotesManagementService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUsersService, UsersService>();
+builder.Services.AddScoped<IAssetsService, AssetsService>();
+builder.Services.AddScoped<ITransactionsService, TransactionsService>();
+builder.Services.AddScoped<IPortfolioService, PortfolioService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"]
@@ -77,6 +99,8 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();
