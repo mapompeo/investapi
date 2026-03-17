@@ -1,8 +1,11 @@
 using System.Text;
+using System.Text.Json.Nodes;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using InvestAPI.Data;
+using InvestAPI.Filters;
 using InvestAPI.Middleware;
+using InvestAPI.Models;
 using InvestAPI.Repositories.Assets;
 using InvestAPI.Repositories.Common;
 using InvestAPI.Repositories.Quotes;
@@ -15,10 +18,14 @@ using InvestAPI.Services.Portfolio;
 using InvestAPI.Services.Quotes;
 using InvestAPI.Services.Transactions;
 using InvestAPI.Services.Users;
+using InvestAPI.Swagger;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
+using Swashbuckle.AspNetCore.SwaggerUI;
+using Swashbuckle.AspNetCore.Annotations;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,7 +36,52 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    options.EnableAnnotations();
+
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+    }
+
+    options.OrderActionsBy(api =>
+    {
+        var methodOrder = api.HttpMethod?.ToUpperInvariant() switch
+        {
+            "POST" => "1",
+            "GET" => "2",
+            "PUT" => "3",
+            "PATCH" => "4",
+            "DELETE" => "5",
+            _ => "6"
+        };
+
+        var group = api.GroupName ?? api.ActionDescriptor.RouteValues["controller"];
+        return $"{group}_{methodOrder}_{api.RelativePath}";
+    });
+
+    options.UseInlineDefinitionsForEnums();
+    options.MapType<AssetType>(() => new OpenApiSchema
+    {
+        Type = JsonSchemaType.String,
+        Enum = Enum
+            .GetNames(typeof(AssetType))
+            .Select(n => (JsonNode)JsonValue.Create(n)!)
+            .ToList()
+    });
+    options.MapType<TransactionType>(() => new OpenApiSchema
+    {
+        Type = JsonSchemaType.String,
+        Enum = Enum
+            .GetNames(typeof(TransactionType))
+            .Select(n => (JsonNode)JsonValue.Create(n)!)
+            .ToList()
+    });
+
+    options.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
+
+    var securityScheme = new OpenApiSecurityScheme
     {
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
@@ -37,22 +89,16 @@ builder.Services.AddSwaggerGen(options =>
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
         Description = "Informe o token JWT no formato: Bearer {token}"
+    };
+
+    options.AddSecurityDefinition("Bearer", securityScheme);
+    options.AddSecurityRequirement(doc => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", doc, null)] = new List<string>()
     });
 
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
+    options.OperationFilter<SecurityOperationFilter>();
+    options.DocumentFilter<AlphabeticalTagsDocumentFilter>();
 });
 
 // Registrar o DbContext com SQL Server
@@ -125,9 +171,23 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.DocExpansion(DocExpansion.List);
+        options.DefaultModelsExpandDepth(1);
+        options.EnableFilter();
+        options.EnableTryItOutByDefault();
+        options.DisplayRequestDuration();
+        options.ShowExtensions();
+        options.ShowCommonExtensions();
+        options.ConfigObject.AdditionalItems["persistAuthorization"] = true;
+        options.InjectStylesheet("/swagger-ui-extras.css");
+        options.InjectJavascript("/swagger-ui-extras.js");
+    });
     app.MapGet("/", () => Results.Redirect("/swagger"));
 }
+
+app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 
