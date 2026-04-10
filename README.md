@@ -82,52 +82,54 @@ JwtSettings__ExpirationInDays="7"
 
 ## Rotas
 
+Base path: `/api/v1`
+
 ### Autenticação
 
 | Método | Rota                 | Descrição               |
 | ------ | -------------------- | ----------------------- |
-| POST   | `/api/auth/register` | Registra novo usuário   |
-| POST   | `/api/auth/login`    | Autentica e retorna JWT |
+| POST   | `/api/v1/auth/register` | Registra novo usuário   |
+| POST   | `/api/v1/auth/login`    | Autentica e retorna JWT |
 
 ### Usuários 🔒
 
 | Método | Rota              | Descrição               |
 | ------ | ----------------- | ----------------------- |
-| GET    | `/api/users/me`   | Dados do usuário logado |
-| GET    | `/api/users/{id}` | Busca um usuário        |
-| PUT    | `/api/users/{id}` | Atualiza um usuário     |
-| DELETE | `/api/users/{id}` | Remove um usuário       |
+| GET    | `/api/v1/users/me`   | Dados do usuário logado |
+| GET    | `/api/v1/users/{id}` | Busca um usuário        |
+| PUT    | `/api/v1/users/{id}` | Atualiza um usuário     |
+| DELETE | `/api/v1/users/{id}` | Remove um usuário       |
 
 ### Assets 🔒
 
 | Método | Rota               | Descrição            |
 | ------ | ------------------ | -------------------- |
-| POST   | `/api/assets`      | Adiciona ativo       |
-| GET    | `/api/assets`      | Lista ativos         |
-| GET    | `/api/assets/{id}` | Detalhes + histórico |
-| DELETE | `/api/assets/{id}` | Remove ativo         |
+| POST   | `/api/v1/assets`      | Adiciona ativo       |
+| GET    | `/api/v1/assets`      | Lista ativos         |
+| GET    | `/api/v1/assets/{id}` | Detalhes + histórico |
+| DELETE | `/api/v1/assets/{id}` | Remove ativo         |
 
 ### Transactions 🔒
 
 | Método | Rota                | Descrição             |
 | ------ | ------------------- | --------------------- |
-| POST   | `/api/transactions` | Registra compra/venda |
-| GET    | `/api/transactions` | Lista transações      |
+| POST   | `/api/v1/transactions` | Registra compra/venda |
+| GET    | `/api/v1/transactions` | Lista transações      |
 
 ### Portfolio 🔒
 
 | Método | Rota                         | Descrição             |
 | ------ | ---------------------------- | --------------------- |
-| GET    | `/api/portfolio/summary`     | Resumo da carteira    |
-| GET    | `/api/portfolio/performance` | Performance por ativo |
-| GET    | `/api/dashboard`             | Dashboard completo    |
+| GET    | `/api/v1/portfolio/summary`     | Resumo da carteira    |
+| GET    | `/api/v1/portfolio/performance` | Performance por ativo |
+| GET    | `/api/v1/dashboard`             | Dashboard completo    |
 
 ### Cotações 🔒
 
 | Método | Rota                           | Descrição                  |
 | ------ | ------------------------------ | -------------------------- |
-| POST   | `/api/quotes/refresh`          | Atualiza todas as cotações |
-| POST   | `/api/quotes/refresh/{ticker}` | Atualiza uma cotação       |
+| POST   | `/api/v1/quotes/refresh`          | Atualiza todas as cotações |
+| POST   | `/api/v1/quotes/refresh/{ticker}` | Atualiza uma cotação       |
 
 🔒 = Requer autenticação (Bearer token)
 
@@ -138,7 +140,7 @@ JwtSettings__ExpirationInDays="7"
 ### 1. Registrar usuário
 
 ```bash
-POST /api/auth/register
+POST /api/v1/auth/register
 Content-Type: application/json
 
 {
@@ -152,7 +154,7 @@ Content-Type: application/json
 ### 2. Fazer login
 
 ```bash
-POST /api/auth/login
+POST /api/v1/auth/login
 Content-Type: application/json
 
 {
@@ -174,7 +176,7 @@ Content-Type: application/json
 ### 3. Adicionar ativo
 
 ```bash
-POST /api/assets
+POST /api/v1/assets
 Authorization: Bearer {seu-token}
 Content-Type: application/json
 

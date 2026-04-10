@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace InvestAPI.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     public class AuthController : ApiControllerBase
     {
         private readonly IAuthService _authService;

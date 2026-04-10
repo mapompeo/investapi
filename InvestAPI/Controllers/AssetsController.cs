@@ -7,7 +7,7 @@ namespace InvestAPI.Controllers
 {
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     public class AssetsController : ApiControllerBase
     {
         private readonly IAssetsService _assetsService;
