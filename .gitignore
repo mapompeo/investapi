@@ -46,6 +46,10 @@ CodeCoverage/
 
 # MSBuild Binary and Structured Log
 *.binlog
+*.db
+*.db-shm
+*.db-wal
+*.Backup.tmp
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
