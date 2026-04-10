@@ -15,11 +15,18 @@ using InvestAPI.Services.Transactions;
 using InvestAPI.Services.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(port) && int.TryParse(port, out var portNumber))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{portNumber}");
+}
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -52,9 +59,11 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Registrar o DbContext com PostgreSQL
+var connectionString = ResolveSqliteConnectionString(builder.Configuration, builder.Environment);
+
+// Registrar o DbContext com SQLite
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite(connectionString));
 
 builder.Services.Configure<QuoteSettings>(builder.Configuration.GetSection("QuoteSettings"));
 builder.Services.AddHttpClient<IBrapiClient, BrapiClient>((sp, client) =>
@@ -119,15 +128,22 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.EnsureCreated();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+
+    try
+    {
+        dbContext.Database.EnsureCreated();
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(ex, "Não foi possível inicializar o banco de dados no startup.");
+    }
 }
 
 // Configure the HTTP request pipeline.
 app.UseSwagger();
 app.UseSwaggerUI();
 app.MapGet("/", () => Results.Redirect("/swagger"));
-
-app.UseHttpsRedirection();
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
@@ -137,3 +153,27 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static string ResolveSqliteConnectionString(IConfiguration configuration, IWebHostEnvironment environment)
+{
+    var rawConnectionString = configuration.GetConnectionString("DefaultConnection") ?? "Data Source=investapi.db";
+    var builder = new SqliteConnectionStringBuilder(rawConnectionString);
+
+    var dbPathOverride = Environment.GetEnvironmentVariable("SQLITE_DB_PATH");
+    if (!string.IsNullOrWhiteSpace(dbPathOverride))
+    {
+        builder.DataSource = dbPathOverride;
+    }
+    else if (!Path.IsPathRooted(builder.DataSource))
+    {
+        builder.DataSource = Path.Combine(environment.ContentRootPath, builder.DataSource);
+    }
+
+    var directory = Path.GetDirectoryName(builder.DataSource);
+    if (!string.IsNullOrWhiteSpace(directory))
+    {
+        Directory.CreateDirectory(directory);
+    }
+
+    return builder.ConnectionString;
+}

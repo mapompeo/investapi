@@ -4,7 +4,7 @@
 
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet)
 ![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=csharp)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=JSON%20web%20tokens)
 
 **API REST para gerenciamento inteligente de carteira de investimentos**
@@ -28,7 +28,7 @@ As cotações externas vêm da [Brapi](https://brapi.dev) para ações e da [Coi
 - .NET 10
 - ASP.NET Core Web API
 - Entity Framework Core
-- PostgreSQL
+- SQLite
 - JWT Bearer
 - BCrypt.Net-Next
 - FluentValidation
@@ -42,7 +42,7 @@ As cotações externas vêm da [Brapi](https://brapi.dev) para ações e da [Coi
 ### Pré-requisitos
 
 - .NET 10 SDK
-- PostgreSQL instalado ou um banco PostgreSQL remoto
+- SQLite usa arquivo local no projeto; no Render, aponte para um disco persistente
 
 ### Instalação Local
 
@@ -52,7 +52,7 @@ git clone https://github.com/mapompeo/InvestAPI.git
 cd InvestAPI
 
 # Configure a connection string
-# Edite appsettings.json ou a variável ConnectionStrings__DefaultConnection com sua conexão PostgreSQL
+# Edite appsettings.json ou a variável ConnectionStrings__DefaultConnection com o caminho do arquivo SQLite
 
 # Rode a aplicação
 dotnet run
@@ -63,12 +63,20 @@ A API fica disponível nas portas definidas em [InvestAPI/Properties/launchSetti
 ### Variáveis de Ambiente
 
 ```bash
-ConnectionStrings__DefaultConnection="Host=YOUR_HOST;Port=5432;Database=InvestAPIDb;Username=YOUR_USER;Password=YOUR_PASSWORD;SSL Mode=Require;Trust Server Certificate=true"
+ConnectionStrings__DefaultConnection="Data Source=investapi.db"
 JwtSettings__SecretKey="sua-chave-secreta-com-32-caracteres-minimo"
 JwtSettings__Issuer="InvestAPI"
 JwtSettings__Audience="InvestAPI-Users"
 JwtSettings__ExpirationInDays="7"
 ```
+
+### Render
+
+- Use um serviço Web no Render com `Docker`.
+- Deixe o `Dockerfile` na raiz do repositório.
+- O container já usa a porta informada pelo Render.
+- O SQLite fica em `investapi.db` dentro do container.
+- Sem disco persistente, os dados do SQLite podem ser perdidos entre deploys.
 
 ---
 
@@ -83,12 +91,12 @@ JwtSettings__ExpirationInDays="7"
 
 ### Usuários 🔒
 
-| Método | Rota               | Descrição            |
-| ------ | ------------------ | -------------------- |
-| GET    | `/api/users/me`    | Dados do usuário logado |
-| GET    | `/api/users/{id}`  | Busca um usuário     |
-| PUT    | `/api/users/{id}`  | Atualiza um usuário  |
-| DELETE | `/api/users/{id}`  | Remove um usuário    |
+| Método | Rota              | Descrição               |
+| ------ | ----------------- | ----------------------- |
+| GET    | `/api/users/me`   | Dados do usuário logado |
+| GET    | `/api/users/{id}` | Busca um usuário        |
+| PUT    | `/api/users/{id}` | Atualiza um usuário     |
+| DELETE | `/api/users/{id}` | Remove um usuário       |
 
 ### Assets 🔒
 
@@ -116,10 +124,10 @@ JwtSettings__ExpirationInDays="7"
 
 ### Cotações 🔒
 
-| Método | Rota                     | Descrição               |
-| ------ | ------------------------ | ----------------------- |
-| POST   | `/api/quotes/refresh`    | Atualiza todas as cotações |
-| POST   | `/api/quotes/refresh/{ticker}` | Atualiza uma cotação |
+| Método | Rota                           | Descrição                  |
+| ------ | ------------------------------ | -------------------------- |
+| POST   | `/api/quotes/refresh`          | Atualiza todas as cotações |
+| POST   | `/api/quotes/refresh/{ticker}` | Atualiza uma cotação       |
 
 🔒 = Requer autenticação (Bearer token)
 
