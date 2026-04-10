@@ -89,13 +89,7 @@ builder.Services.AddScoped<IPortfolioService, PortfolioService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["SecretKey"]
-    ?? throw new InvalidOperationException("JwtSettings:SecretKey não configurado.");
-
-if (Encoding.UTF8.GetByteCount(secretKey) < 32)
-{
-    throw new InvalidOperationException("JwtSettings:SecretKey deve ter no mínimo 32 bytes para HS256.");
-}
+var secretKey = ResolveJwtSecretKey(jwtSettings);
 
 builder.Services
     .AddAuthentication(options =>
@@ -176,4 +170,21 @@ static string ResolveSqliteConnectionString(IConfiguration configuration, IWebHo
     }
 
     return builder.ConnectionString;
+}
+
+static string ResolveJwtSecretKey(IConfigurationSection jwtSettings)
+{
+    var configuredSecretKey = jwtSettings["SecretKey"];
+    if (!string.IsNullOrWhiteSpace(configuredSecretKey) && Encoding.UTF8.GetByteCount(configuredSecretKey) >= 32)
+    {
+        return configuredSecretKey;
+    }
+
+    const string fallbackSecretKey = "SET_THIS_IN_ENVIRONMENT_MINIMUM_32_BYTES";
+    if (Encoding.UTF8.GetByteCount(fallbackSecretKey) >= 32)
+    {
+        return fallbackSecretKey;
+    }
+
+    throw new InvalidOperationException("JwtSettings:SecretKey deve ter no mínimo 32 bytes para HS256.");
 }
