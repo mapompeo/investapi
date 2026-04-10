@@ -12,7 +12,6 @@ namespace InvestAPI.Data
         public DbSet<Users> Users { get; set; }
         public DbSet<Assets> Assets { get; set; }
         public DbSet<Transactions> Transactions { get; set; }
-        public DbSet<AssetQuote> AssetQuotes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -55,15 +54,6 @@ namespace InvestAPI.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            modelBuilder.Entity<AssetQuote>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.HasIndex(e => e.Ticker).IsUnique();
-                entity.Property(e => e.Ticker).HasMaxLength(20).IsRequired();
-                entity.Property(e => e.CurrentPrice).HasPrecision(18, 2);
-                entity.Property(e => e.Currency).HasMaxLength(3);
-                entity.Property(e => e.Source).HasMaxLength(50);
-            });
         }
     }
 }

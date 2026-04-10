@@ -3,9 +3,8 @@ using System.Security.Claims;
 using System.Text;
 using InvestAPI.DTOs.Auth;
 using InvestAPI.Exceptions;
-using InvestAPI.Models;
-using InvestAPI.Repositories.Common;
-using InvestAPI.Repositories.Users;
+using InvestAPI.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using UserEntity = InvestAPI.Models.Users;
 
@@ -13,14 +12,12 @@ namespace InvestAPI.Services.Auth;
 
 public class AuthService : IAuthService
 {
-    private readonly IUsersRepository _usersRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
 
-    public AuthService(IUsersRepository usersRepository, IUnitOfWork unitOfWork, IConfiguration configuration)
+    public AuthService(AppDbContext context, IConfiguration configuration)
     {
-        _usersRepository = usersRepository;
-        _unitOfWork = unitOfWork;
+        _context = context;
         _configuration = configuration;
     }
 
@@ -33,7 +30,7 @@ public class AuthService : IAuthService
 
         var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
 
-        if (await _usersRepository.EmailExistsAsync(normalizedEmail, cancellationToken))
+        if (await _context.Users.AnyAsync(user => user.Email == normalizedEmail, cancellationToken))
         {
             throw new ConflictException("Email já cadastrado.");
         }
@@ -46,8 +43,8 @@ public class AuthService : IAuthService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password, workFactor: 12)
         };
 
-        _usersRepository.Add(user);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return new LoginResponseDto
         {
@@ -61,7 +58,7 @@ public class AuthService : IAuthService
     {
         var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
 
-        var user = await _usersRepository.GetByNormalizedEmailAsync(normalizedEmail, cancellationToken);
+        var user = await _context.Users.FirstOrDefaultAsync(user => user.Email == normalizedEmail, cancellationToken);
 
         if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
         {

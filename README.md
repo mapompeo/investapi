@@ -4,111 +4,36 @@
 
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet)
 ![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=csharp)
-![SQLServer](https://img.shields.io/badge/SQL%20Server-CC2927?style=for-the-badge&logo=microsoftsqlserver)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=JSON%20web%20tokens)
 
 **API REST para gerenciamento inteligente de carteira de investimentos**
 
-[Features](#-features) • [Arquitetura](#-arquitetura) • [Como Usar](#-como-usar) • [Endpoints](#-endpoints)
+[Sobre](#-sobre) • [Stack](#-stack) • [Como Usar](#-como-usar) • [Rotas](#-rotas)
 
 </div>
 
 ---
 
-## 🎯 Sobre o Projeto
+## Sobre
 
-API completa para controle de investimentos em **ações brasileiras (B3)** e **criptomoedas**, com cotações em tempo real via integração com APIs externas (Brapi e CoinGecko).
+InvestAPI é uma API para organizar uma carteira de investimentos. O projeto permite criar usuário, fazer login, cadastrar ativos, lançar transações, consultar resumo da carteira e atualizar cotações.
 
-### ✨ Features
-
-- 🔐 Autenticação JWT com hash BCrypt
-- 💼 Gerenciamento completo de ativos (CRUD)
-- 💸 Sistema de transações (compra/venda)
-- 📊 Portfolio com métricas de performance
-- 📈 Dashboard com diversificação e rentabilidade
-- ⚡ Cache inteligente de cotações (5 min)
-- 🔄 Cálculo automático de preço médio
+As cotações externas vêm da [Brapi](https://brapi.dev) para ações e da [CoinGecko](https://www.coingecko.com) para criptomoedas.
 
 ---
 
-## 🛠️ Stack
+## Stack
 
-| Tecnologia            | Uso            |
-| --------------------- | -------------- |
-| .NET 10               | Framework      |
-| Entity Framework Core | ORM            |
-| SQL Server            | Banco de dados |
-| JWT Bearer            | Autenticação   |
-| FluentValidation      | Validações     |
-| Swagger/OpenAPI       | Documentação   |
-
-**APIs Externas:**
-
-- [Brapi](https://brapi.dev) - Ações B3
-- [CoinGecko](https://www.coingecko.com) - Criptomoedas
-
----
-
-## 📐 Arquitetura
-
-```mermaid
-graph LR
-    A[Cliente] --> B[Controllers]
-    B --> C[Services]
-    C --> D[Repositories]
-    D --> E[(SQL Server)]
-    C --> F[QuoteService]
-    F --> G[Brapi API]
-    F --> H[CoinGecko API]
-
-    style A fill:#e1f5ff
-    style B fill:#fff4e1
-    style C fill:#ffe1f5
-    style D fill:#e1ffe1
-    style E fill:#f5e1ff
-```
-
-**Camadas:**
-
-- **Controllers** → Validação JWT e roteamento
-- **Services** → Regras de negócio
-- **Repositories** → Acesso a dados (EF Core)
-- **QuoteService** → Integração com APIs externas
-
----
-
-## 🗄️ Modelo de Dados
-
-```mermaid
-erDiagram
-    USER ||--o{ ASSET : possui
-    ASSET ||--o{ TRANSACTION : tem
-
-    USER {
-        guid Id PK
-        string Name
-        string Email UK
-        string PasswordHash
-    }
-
-    ASSET {
-        guid Id PK
-        guid UserId FK
-        string Ticker
-        enum Type
-        decimal Quantity
-        decimal AvgBuyPrice
-    }
-
-    TRANSACTION {
-        guid Id PK
-        guid AssetId FK
-        enum Type
-        decimal Quantity
-        decimal Price
-        datetime Date
-    }
-```
+- .NET 10
+- ASP.NET Core Web API
+- Entity Framework Core
+- PostgreSQL
+- JWT Bearer
+- BCrypt.Net-Next
+- FluentValidation
+- Swagger/OpenAPI
+- HttpClientFactory
 
 ---
 
@@ -117,51 +42,37 @@ erDiagram
 ### Pré-requisitos
 
 - .NET 10 SDK
-- SQL Server (ou SQL Server LocalDB)
-- Conta Railway (para deploy)
+- PostgreSQL instalado ou um banco PostgreSQL remoto
 
 ### Instalação Local
 
 ```bash
 # Clone o repositório
-git clone https://github.com/seu-usuario/InvestAPI.git
+git clone https://github.com/mapompeo/InvestAPI.git
 cd InvestAPI
 
 # Configure a connection string
-# Edite appsettings.json com suas credenciais SQL Server
+# Edite appsettings.json ou a variável ConnectionStrings__DefaultConnection com sua conexão PostgreSQL
 
-# Rode as migrations
-dotnet ef database update
-
-# Execute o projeto
+# Rode a aplicação
 dotnet run
 ```
 
-A API estará disponível em `https://localhost:7000` com Swagger em `/swagger`
+A API fica disponível nas portas definidas em [InvestAPI/Properties/launchSettings.json](InvestAPI/Properties/launchSettings.json) e o Swagger aparece em `/swagger`.
 
 ### Variáveis de Ambiente
 
 ```bash
-ConnectionStrings__DefaultConnection="Server=(localdb)\\mssqllocaldb;Database=InvestAPIDb;Trusted_Connection=true;TrustServerCertificate=true;"
+ConnectionStrings__DefaultConnection="Host=YOUR_HOST;Port=5432;Database=InvestAPIDb;Username=YOUR_USER;Password=YOUR_PASSWORD;SSL Mode=Require;Trust Server Certificate=true"
 JwtSettings__SecretKey="sua-chave-secreta-com-32-caracteres-minimo"
 JwtSettings__Issuer="InvestAPI"
 JwtSettings__Audience="InvestAPI-Users"
 JwtSettings__ExpirationInDays="7"
 ```
 
-### Status atual de migrations
-
-- Migration inicial criada: `InitialCreate`
-- Provider atual das migrations: SQL Server
-- Comando para aplicar no banco local:
-
-```bash
-dotnet ef database update
-```
-
 ---
 
-## 📡 Endpoints
+## Rotas
 
 ### Autenticação
 
@@ -169,6 +80,15 @@ dotnet ef database update
 | ------ | -------------------- | ----------------------- |
 | POST   | `/api/auth/register` | Registra novo usuário   |
 | POST   | `/api/auth/login`    | Autentica e retorna JWT |
+
+### Usuários 🔒
+
+| Método | Rota               | Descrição            |
+| ------ | ------------------ | -------------------- |
+| GET    | `/api/users/me`    | Dados do usuário logado |
+| GET    | `/api/users/{id}`  | Busca um usuário     |
+| PUT    | `/api/users/{id}`  | Atualiza um usuário  |
+| DELETE | `/api/users/{id}`  | Remove um usuário    |
 
 ### Assets 🔒
 
@@ -193,6 +113,13 @@ dotnet ef database update
 | GET    | `/api/portfolio/summary`     | Resumo da carteira    |
 | GET    | `/api/portfolio/performance` | Performance por ativo |
 | GET    | `/api/dashboard`             | Dashboard completo    |
+
+### Cotações 🔒
+
+| Método | Rota                     | Descrição               |
+| ------ | ------------------------ | ----------------------- |
+| POST   | `/api/quotes/refresh`    | Atualiza todas as cotações |
+| POST   | `/api/quotes/refresh/{ticker}` | Atualiza uma cotação |
 
 🔒 = Requer autenticação (Bearer token)
 
@@ -267,97 +194,16 @@ Content-Type: application/json
 
 ---
 
-## 🔄 Fluxo de Transação
+## Como Funciona
 
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant API as InvestAPI
-    participant DB as Database
-    participant Ext as Brapi/CoinGecko
-
-    U->>API: POST /api/assets {ticker, quantity, price}
-    API->>API: Validar JWT
-    API->>Ext: Buscar cotação atual
-    Ext-->>API: CurrentPrice
-    API->>DB: Salvar Asset
-    API->>API: Calcular profitLoss
-    API-->>U: Asset + metrics
-```
-
----
-
-## 🧮 Lógica de Negócio
-
-### Cálculo de Preço Médio
-
-```
-Novo Avg = (Qty Atual × Avg Atual) + (Qty Nova × Preço Novo)
-           ───────────────────────────────────────────────────
-                        Qty Atual + Qty Nova
-```
-
-**Exemplo:**
-
-- Tinha: 50 ações @ R$ 37,00 = R$ 1.850
-- Comprou: 50 ações @ R$ 40,00 = R$ 2.000
-- **Novo avg:** R$ 38,50
-
-### Cálculo de Rentabilidade
-
-```
-Lucro/Prejuízo = (Qty × Preço Atual) - (Qty × Preço Médio)
-Percentual = (Lucro / Valor Investido) × 100
-```
-
----
-
-## 📦 Deploy
-
-### Railway
-
-```bash
-# Instale o Railway CLI
-npm install -g @railway/cli
-
-# Login
-railway login
-
-# Deploy
-railway up
-```
-
-A API será deployada automaticamente com PostgreSQL incluso no free tier.
-
----
-
-## 🧪 Testes
-
-```bash
-# Rodar testes unitários (quando implementados)
-dotnet test
-```
-
----
+1. O usuário cria conta e faz login.
+2. A API devolve um token JWT.
+3. Com o token, o usuário cria ativos e transações.
+4. A API calcula os dados da carteira e busca cotações externas.
 
 ## 📚 Documentação Adicional
 
 - **Swagger:** Acesse `/swagger` quando a API estiver rodando
-- **Postman Collection:** [Link para collection] (adicionar depois)
-
----
-
-## 🤝 Contribuindo
-
-Contribuições são bem-vindas! Sinta-se livre para abrir issues e pull requests.
-
-1. Fork o projeto
-2. Crie uma branch (`git checkout -b feature/MinhaFeature`)
-3. Commit suas mudanças (`git commit -m 'Add: nova feature'`)
-4. Push para a branch (`git push origin feature/MinhaFeature`)
-5. Abra um Pull Request
-
----
 
 ## 📄 Licença
 
@@ -367,10 +213,10 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 ## 👨‍💻 Autor
 
-**Seu Nome**
+**Matheus Pompeo**
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/seu-perfil)
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/seu-usuario)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/matheuspompeo/)
+[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/mapompeo)
 
 ---
 

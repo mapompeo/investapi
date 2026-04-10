@@ -1,24 +1,22 @@
 using InvestAPI.DTOs.Users;
 using InvestAPI.Exceptions;
-using InvestAPI.Repositories.Common;
-using InvestAPI.Repositories.Users;
+using InvestAPI.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace InvestAPI.Services.Users;
 
 public class UsersService : IUsersService
 {
-    private readonly IUsersRepository _usersRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly AppDbContext _context;
 
-    public UsersService(IUsersRepository usersRepository, IUnitOfWork unitOfWork)
+    public UsersService(AppDbContext context)
     {
-        _usersRepository = usersRepository;
-        _unitOfWork = unitOfWork;
+        _context = context;
     }
 
     public async Task<UserResponseDto> GetMeAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        var user = await _usersRepository.GetByIdAsync(userId, asNoTracking: true, cancellationToken);
+        var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(user => user.Id == userId, cancellationToken);
 
         if (user is null)
         {
@@ -38,7 +36,7 @@ public class UsersService : IUsersService
     {
         EnsureOwnership(currentUserId, targetUserId);
 
-        var user = await _usersRepository.GetByIdAsync(targetUserId, asNoTracking: false, cancellationToken);
+        var user = await _context.Users.FirstOrDefaultAsync(user => user.Id == targetUserId, cancellationToken);
         if (user is null)
         {
             throw new NotFoundException("Usuário não encontrado.");
@@ -63,7 +61,8 @@ public class UsersService : IUsersService
                 throw new BadRequestException("Email não pode ser vazio.");
             }
 
-            var exists = await _usersRepository.EmailExistsForOtherUserAsync(normalizedEmail, user.Id, cancellationToken);
+            var exists = await _context.Users.AnyAsync(existingUser =>
+                existingUser.Email == normalizedEmail && existingUser.Id != user.Id, cancellationToken);
 
             if (exists)
             {
@@ -78,21 +77,21 @@ public class UsersService : IUsersService
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password, workFactor: 12);
         }
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task DeleteAsync(Guid currentUserId, Guid targetUserId, CancellationToken cancellationToken = default)
     {
         EnsureOwnership(currentUserId, targetUserId);
 
-        var user = await _usersRepository.GetByIdAsync(targetUserId, asNoTracking: false, cancellationToken);
+        var user = await _context.Users.FirstOrDefaultAsync(user => user.Id == targetUserId, cancellationToken);
         if (user is null)
         {
             throw new NotFoundException("Usuário não encontrado.");
         }
 
-        _usersRepository.Remove(user);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        _context.Users.Remove(user);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     private static void EnsureOwnership(Guid currentUserId, Guid targetUserId)
