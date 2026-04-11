@@ -86,15 +86,15 @@ Base path: `/api/v1`
 
 ### Autenticação
 
-| Método | Rota                 | Descrição               |
-| ------ | -------------------- | ----------------------- |
+| Método | Rota                    | Descrição               |
+| ------ | ----------------------- | ----------------------- |
 | POST   | `/api/v1/auth/register` | Registra novo usuário   |
 | POST   | `/api/v1/auth/login`    | Autentica e retorna JWT |
 
 ### Usuários 🔒
 
-| Método | Rota              | Descrição               |
-| ------ | ----------------- | ----------------------- |
+| Método | Rota                 | Descrição               |
+| ------ | -------------------- | ----------------------- |
 | GET    | `/api/v1/users/me`   | Dados do usuário logado |
 | GET    | `/api/v1/users/{id}` | Busca um usuário        |
 | PUT    | `/api/v1/users/{id}` | Atualiza um usuário     |
@@ -102,8 +102,8 @@ Base path: `/api/v1`
 
 ### Assets 🔒
 
-| Método | Rota               | Descrição            |
-| ------ | ------------------ | -------------------- |
+| Método | Rota                  | Descrição            |
+| ------ | --------------------- | -------------------- |
 | POST   | `/api/v1/assets`      | Adiciona ativo       |
 | GET    | `/api/v1/assets`      | Lista ativos         |
 | GET    | `/api/v1/assets/{id}` | Detalhes + histórico |
@@ -111,23 +111,23 @@ Base path: `/api/v1`
 
 ### Transactions 🔒
 
-| Método | Rota                | Descrição             |
-| ------ | ------------------- | --------------------- |
+| Método | Rota                   | Descrição             |
+| ------ | ---------------------- | --------------------- |
 | POST   | `/api/v1/transactions` | Registra compra/venda |
 | GET    | `/api/v1/transactions` | Lista transações      |
 
 ### Portfolio 🔒
 
-| Método | Rota                         | Descrição             |
-| ------ | ---------------------------- | --------------------- |
+| Método | Rota                            | Descrição             |
+| ------ | ------------------------------- | --------------------- |
 | GET    | `/api/v1/portfolio/summary`     | Resumo da carteira    |
 | GET    | `/api/v1/portfolio/performance` | Performance por ativo |
 | GET    | `/api/v1/dashboard`             | Dashboard completo    |
 
 ### Cotações 🔒
 
-| Método | Rota                           | Descrição                  |
-| ------ | ------------------------------ | -------------------------- |
+| Método | Rota                              | Descrição                  |
+| ------ | --------------------------------- | -------------------------- |
 | POST   | `/api/v1/quotes/refresh`          | Atualiza todas as cotações |
 | POST   | `/api/v1/quotes/refresh/{ticker}` | Atualiza uma cotação       |
 
