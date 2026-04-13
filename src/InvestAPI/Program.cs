@@ -136,7 +136,65 @@ using (var scope = app.Services.CreateScope())
 
 // Configure the HTTP request pipeline.
 app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwaggerUI(options =>
+{
+    options.HeadContent = """
+        <style>
+            :root {
+                color-scheme: light;
+            }
+
+            html, body, .swagger-ui {
+                background: #ffffff !important;
+                color: #1f2937 !important;
+            }
+
+            .swagger-ui .topbar {
+                background-color: #ffffff !important;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .swagger-ui .info .title,
+            .swagger-ui .opblock-tag,
+            .swagger-ui .opblock .opblock-summary-description,
+            .swagger-ui .opblock .opblock-summary-path,
+            .swagger-ui .opblock .opblock-summary-path span,
+            .swagger-ui .opblock-description-wrapper p,
+            .swagger-ui .response-col_status,
+            .swagger-ui .response-col_description,
+            .swagger-ui table thead tr th,
+            .swagger-ui .parameter__name,
+            .swagger-ui .parameter__type,
+            .swagger-ui .parameter__in {
+                color: #1f2937 !important;
+            }
+
+            .swagger-ui .scheme-container,
+            .swagger-ui .opblock,
+            .swagger-ui .btn,
+            .swagger-ui .dialog-ux .modal-ux,
+            .swagger-ui .responses-inner,
+            .swagger-ui .response,
+            .swagger-ui .parameters-container,
+            .swagger-ui section.models,
+            .swagger-ui .model-box,
+            .swagger-ui .model-box .model,
+            .swagger-ui .renderedMarkdown,
+            .swagger-ui .tab,
+            .swagger-ui .opblock .opblock-section-header {
+                background-color: #ffffff !important;
+            }
+
+            .swagger-ui .opblock.opblock-get .opblock-summary {
+                border-color: #c7d2fe !important;
+            }
+
+            .swagger-ui .btn {
+                box-shadow: none !important;
+            }
+        </style>
+        """;
+});
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.UseMiddleware<GlobalExceptionMiddleware>();

@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InvestAPI", "InvestAPI\InvestAPI.csproj", "{4D782061-2D92-B55F-4B97-D2CA541C0C47}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InvestAPI", "src\InvestAPI\InvestAPI.csproj", "{4D782061-2D92-B55F-4B97-D2CA541C0C47}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

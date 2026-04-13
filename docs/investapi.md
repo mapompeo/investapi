@@ -19,7 +19,7 @@ Sistema backend para gerenciamento de carteira de investimentos (ações BR e cr
 - **HttpClientFactory** - Integrações externas
 - **Middleware global de exceção** - Tratamento centralizado de erros
 
-Inventário completo: [TECNOLOGIAS.md](TECNOLOGIAS.md).
+Inventário completo: veja o [README](../README.md) para a visão geral do stack e da estrutura.
 
 ### APIs Externas
 
