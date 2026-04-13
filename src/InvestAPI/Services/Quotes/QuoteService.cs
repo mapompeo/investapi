@@ -1,5 +1,6 @@
 using InvestAPI.Models;
 using Microsoft.Extensions.Options;
+using System.Text.Json;
 
 namespace InvestAPI.Services.Quotes;
 
@@ -42,19 +43,38 @@ public class QuoteService : IQuoteService
         {
             decimal? price;
 
-            if (asset.Type == AssetType.Crypto)
+            try
             {
-                var coinId = ResolveCoinGeckoId(asset.Ticker);
+                if (asset.Type == AssetType.Crypto)
+                {
+                    var coinId = ResolveCoinGeckoId(asset.Ticker);
 
-                price = !string.IsNullOrWhiteSpace(coinId)
-                    ? await _coinGeckoClient.GetPriceByIdAsync(coinId, _settings.CoinGeckoVsCurrency, cancellationToken)
-                    : null;
+                    price = !string.IsNullOrWhiteSpace(coinId)
+                        ? await _coinGeckoClient.GetPriceByIdAsync(coinId, _settings.CoinGeckoVsCurrency, cancellationToken)
+                        : null;
 
-                price ??= await _coinGeckoClient.GetPriceBySymbolAsync(asset.Ticker, _settings.CoinGeckoVsCurrency, cancellationToken);
+                    price ??= await _coinGeckoClient.GetPriceBySymbolAsync(asset.Ticker, _settings.CoinGeckoVsCurrency, cancellationToken);
+                }
+                else
+                {
+                    price = await _brapiClient.GetPriceAsync(asset.Ticker, cancellationToken);
+                }
             }
-            else
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
-                price = await _brapiClient.GetPriceAsync(asset.Ticker, cancellationToken);
+                price = null;
+            }
+            catch (HttpRequestException)
+            {
+                price = null;
+            }
+            catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                price = null;
+            }
+            catch (JsonException)
+            {
+                price = null;
             }
 
             if (price is null || price <= 0)

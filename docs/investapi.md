@@ -61,6 +61,8 @@ Inventário completo: veja o [README](../README.md) para a visão geral do stack
 - O schema do banco é criado automaticamente no startup com `EnsureCreated()`
 - Para produção gratuita, use PostgreSQL free em Neon, Supabase ou Render e hospede a API em Render ou Railway
 - Para demonstrar como API, o foco é testar cadastro, login e CRUD diretamente no Swagger
+- Existe um endpoint de health em `GET /health` para checagem básica de banco
+- CORS e rate limiting estão configurados no pipeline e podem ser ajustados por configuração
 
 ---
 
