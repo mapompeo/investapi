@@ -5,8 +5,8 @@ COPY ["InvestAPI/InvestAPI.csproj", "InvestAPI/"]
 RUN dotnet restore "InvestAPI/InvestAPI.csproj"
 
 COPY . .
-WORKDIR /src/InvestAPI
-RUN dotnet publish "InvestAPI.csproj" -c Release -o /app/publish /p:UseAppHost=false
+WORKDIR /src
+RUN dotnet publish "InvestAPI/InvestAPI.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app

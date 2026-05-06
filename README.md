@@ -96,7 +96,7 @@ cd InvestAPI
 dotnet run
 ```
 
-A API fica disponível nas portas definidas em [src/InvestAPI/Properties/launchSettings.json](src/InvestAPI/Properties/launchSettings.json) e o Swagger aparece em `/swagger`.
+A API fica disponível nas portas definidas em [InvestAPI/Properties/launchSettings.json](InvestAPI/Properties/launchSettings.json) e o Swagger aparece em `/swagger`.
 
 ### Variáveis de Ambiente
 

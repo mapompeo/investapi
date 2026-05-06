@@ -14,11 +14,13 @@ using InvestAPI.Services.Quotes;
 using InvestAPI.Services.Transactions;
 using InvestAPI.Services.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Reflection;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +35,58 @@ builder.Services.AddControllers();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DefaultCors", policy =>
+    {
+        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+        var origins = allowedOrigins
+            .Where(origin => !string.IsNullOrWhiteSpace(origin))
+            .Select(origin => origin.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (origins.Length == 0)
+        {
+            origins = new[]
+            {
+                "http://localhost:3000",
+                "http://localhost:5173",
+                "http://localhost:8080"
+            };
+        }
+
+        policy.WithOrigins(origins)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+builder.Services.AddHealthChecks();
+builder.Services.AddRateLimiter(options =>
+{
+    var rateLimitingSection = builder.Configuration.GetSection("RateLimiting");
+    var permitLimit = rateLimitingSection.GetValue<int?>("PermitLimit") ?? 120;
+    var windowMinutes = rateLimitingSection.GetValue<int?>("WindowMinutes") ?? 1;
+    var queueLimit = rateLimitingSection.GetValue<int?>("QueueLimit") ?? 0;
+
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+    {
+        var partitionKey = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = permitLimit,
+                Window = TimeSpan.FromMinutes(windowMinutes),
+                QueueLimit = queueLimit,
+                AutoReplenishment = true,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            });
+    });
+
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
 builder.Services.AddSwaggerGen(options =>
 {
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
@@ -70,11 +124,13 @@ builder.Services.AddHttpClient<IBrapiClient, BrapiClient>((sp, client) =>
 {
     var settings = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<QuoteSettings>>().Value;
     client.BaseAddress = new Uri(settings.BrapiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(10);
 });
 builder.Services.AddHttpClient<ICoinGeckoClient, CoinGeckoClient>((sp, client) =>
 {
     var settings = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<QuoteSettings>>().Value;
     client.BaseAddress = new Uri(settings.CoinGeckoBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(10);
 });
 builder.Services.AddScoped<IQuoteService, QuoteService>();
 builder.Services.AddScoped<IUnitOfWork, EfUnitOfWork>();
@@ -138,69 +194,37 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI(options =>
 {
-    options.HeadContent = """
-        <style>
-            :root {
-                color-scheme: light;
-            }
-
-            html, body, .swagger-ui {
-                background: #ffffff !important;
-                color: #1f2937 !important;
-            }
-
-            .swagger-ui .topbar {
-                background-color: #ffffff !important;
-                border-bottom: 1px solid #e5e7eb;
-            }
-
-            .swagger-ui .info .title,
-            .swagger-ui .opblock-tag,
-            .swagger-ui .opblock .opblock-summary-description,
-            .swagger-ui .opblock .opblock-summary-path,
-            .swagger-ui .opblock .opblock-summary-path span,
-            .swagger-ui .opblock-description-wrapper p,
-            .swagger-ui .response-col_status,
-            .swagger-ui .response-col_description,
-            .swagger-ui table thead tr th,
-            .swagger-ui .parameter__name,
-            .swagger-ui .parameter__type,
-            .swagger-ui .parameter__in {
-                color: #1f2937 !important;
-            }
-
-            .swagger-ui .scheme-container,
-            .swagger-ui .opblock,
-            .swagger-ui .btn,
-            .swagger-ui .dialog-ux .modal-ux,
-            .swagger-ui .responses-inner,
-            .swagger-ui .response,
-            .swagger-ui .parameters-container,
-            .swagger-ui section.models,
-            .swagger-ui .model-box,
-            .swagger-ui .model-box .model,
-            .swagger-ui .renderedMarkdown,
-            .swagger-ui .tab,
-            .swagger-ui .opblock .opblock-section-header {
-                background-color: #ffffff !important;
-            }
-
-            .swagger-ui .opblock.opblock-get .opblock-summary {
-                border-color: #c7d2fe !important;
-            }
-
-            .swagger-ui .btn {
-                box-shadow: none !important;
-            }
-        </style>
-        """;
 });
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
+app.UseCors("DefaultCors");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapGet("/health", async (AppDbContext dbContext, CancellationToken cancellationToken) =>
+{
+    var canConnect = await dbContext.Database.CanConnectAsync(cancellationToken);
+
+    if (canConnect)
+    {
+        return Results.Ok(new
+        {
+            status = "Healthy",
+            database = "Connected",
+            timestamp = DateTime.UtcNow
+        });
+    }
+
+    return Results.Json(new
+    {
+        status = "Unhealthy",
+        database = "Unavailable",
+        timestamp = DateTime.UtcNow
+    }, statusCode: StatusCodes.Status503ServiceUnavailable);
+});
 
 app.MapControllers();
 
