@@ -37,6 +37,44 @@ As cotações externas vêm da [Brapi](https://brapi.dev) para ações e da [Coi
 
 ---
 
+## 🏗️ Arquitetura
+
+**Padrão:** MVC com Repository Pattern (Layered Architecture)
+
+```
+HTTP Request
+    ↓
+Controllers (DTOs de entrada)
+    ↓
+Services (Lógica de negócio)
+    ↓
+Repositories / DbContext (Acesso a dados)
+    ↓
+Database
+```
+
+### Camadas:
+
+- **Controllers** — Endpoints HTTP, validação de entrada com FluentValidation
+- **Services** — Lógica de negócio isolada (Auth, Portfolio, Cotações, etc)
+- **Repositories** — Abstração de acesso a dados (Assets, Transactions)
+- **Models** — Entidades do banco (Users, Assets, Transactions)
+- **DTOs** — Transferência de dados entre client/server
+- **Data** — Entity Framework Core + DbContext
+- **Middleware** — Tratamento global de exceções
+- **Validators** — Regras de validação de entrada
+
+### Por que não Clean Architecture?
+
+Este projeto segue **Layered simples** em vez de Clean Arch porque:
+- Services acessam DbContext diretamente (não isolam completamente infraestrutura)
+- Foco em clareza e manutenibilidade sem overdoing abstrações
+- Perfil para demonstrar domínio de padrões REST, JWT e EF Core
+
+Se o projeto crescer significativamente, você pode refatorar para Use Cases/Interactors.
+
+---
+
 ## 🚀 Como Usar
 
 ### Pré-requisitos
